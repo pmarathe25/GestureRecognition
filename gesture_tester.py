@@ -14,31 +14,27 @@ INPUT_PANEL_HEIGHT = 800
 WIDTH_SPACING = INPUT_PANEL_WIDTH / config.ARRAY_WIDTH
 HEIGHT_SPACING = INPUT_PANEL_HEIGHT / config.ARRAY_HEIGHT
 # GUI Constants
-MAX_COLUMN_SPAN = 5
+MAX_COLUMN_SPAN = 4
 BACKGROUND_COLOR = "white"
 
 def main():
-    global status_text, register_text, savefile_text
-    root = Tk(className = "Gesture Input")
+    global status_text, register_text, loadfile_text
+    root = Tk(className = "Gesture Tester")
     # Current status
     status_text = StringVar()
     status_box = Label(root, textvariable = status_text)
     status_box.grid(row = 2, columnspan = MAX_COLUMN_SPAN)
-    # Gesture name Text Entry box.
-    register_text = StringVar()
-    register_textbox = Entry(root, textvariable = register_text)
-    register_textbox.grid(row = 1, column = 0)
-    # Save file name Text Entry box.
-    savefile_text = StringVar()
-    savefile_textbox = Entry(root, textvariable = savefile_text)
-    savefile_textbox.grid(row = 1, column = 1)
+    # Load file name Text Entry box.
+    loadfile_text = StringVar()
+    loadfile_textbox = Entry(root, textvariable = loadfile_text)
+    loadfile_textbox.grid(row = 1, column = 0)
     # Buttons
-    register_button = Button(root, text = "Register", bg = BACKGROUND_COLOR, command = process_gesture)
-    register_button.grid(row = 1, column = 2)
-    save_button = Button(root, text = "Save", bg = BACKGROUND_COLOR, command = save_gestures)
-    save_button.grid(row = 1, column = 3)
+    recognize_button = Button(root, text = "Recognize", bg = BACKGROUND_COLOR, command = process_gesture)
+    recognize_button.grid(row = 1, column = 1)
+    save_button = Button(root, text = "Load", bg = BACKGROUND_COLOR, command = load_gestures)
+    save_button.grid(row = 1, column = 2)
     clear_button = Button(root, text = "Clear", bg = BACKGROUND_COLOR, command = lambda: reset_grid(drawing_area))
-    clear_button.grid(row = 1, column = 4)
+    clear_button.grid(row = 1, column = 3)
     # Drawing area
     drawing_area = Canvas(root, width = INPUT_PANEL_WIDTH, height = INPUT_PANEL_HEIGHT, bg = BACKGROUND_COLOR)
     drawing_area.grid(row = 0, column = 0, columnspan = MAX_COLUMN_SPAN)
@@ -48,8 +44,8 @@ def main():
     drawing_area.bind("<ButtonRelease-1>", b1up)
     # Start!
     status_text.set("Program Started")
-    register_text.set("LRSwipe")
-    savefile_text.set("Gestures.pkl")
+    loadfile_text.set("Gestures.pkl")
+    load_gestures()
     root.mainloop()
 
 def b1down(event):
@@ -93,7 +89,7 @@ def process_gesture():
     index = 0
     for point in gesture:
         if (index >= config.MAX_GESTURE_LENGTH):
-            status_text.set("Could not register - Gesture too long")
+            status_text.set("Could not recognize - Gesture too long")
             return
         downsampled_point = locate_point(point)
         # Add this square if it hasn't shown up before.
@@ -102,13 +98,12 @@ def process_gesture():
             index += 1
             previous_point = downsampled_point
     # Display status
-    status_text.set("Registering %r under %r" % (gesture_deltas[0:index], register_text.get()))
-    recognizer.register_gesture(gesture_deltas, register_text.get())
+    status_text.set("Recognized gesture as %r" % recognizer.identify_gesture(gesture_deltas))
 
-def save_gestures():
-    global savefile_text, recognizer, status_text
-    status_text.set("Saving gestures to %r" % savefile_text.get())
-    recognizer.save_gestures(savefile_text.get())
+def load_gestures():
+    global loadfile_text, recognizer, status_text
+    status_text.set("Loading gestures from %r" % loadfile_text.get())
+    recognizer.load_gestures(loadfile_text.get())
 
 if __name__ == "__main__":
     main()
