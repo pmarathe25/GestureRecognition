@@ -14,7 +14,7 @@ INPUT_PANEL_HEIGHT = 800
 WIDTH_SPACING = INPUT_PANEL_WIDTH / config.ARRAY_WIDTH
 HEIGHT_SPACING = INPUT_PANEL_HEIGHT / config.ARRAY_HEIGHT
 # GUI Constants
-MAX_COLUMN_SPAN = 5
+MAX_COLUMN_SPAN = 6
 BACKGROUND_COLOR = "white"
 
 def main():
@@ -33,12 +33,14 @@ def main():
     savefile_textbox = Entry(root, textvariable = savefile_text)
     savefile_textbox.grid(row = 1, column = 1)
     # Buttons
-    register_button = Button(root, text = "Register", bg = BACKGROUND_COLOR, command = process_gesture)
+    register_button = Button(root, text = "Register", bg = BACKGROUND_COLOR, command = lambda: process_gesture(drawing_area))
     register_button.grid(row = 1, column = 2)
     save_button = Button(root, text = "Save", bg = BACKGROUND_COLOR, command = save_gestures)
     save_button.grid(row = 1, column = 3)
     clear_button = Button(root, text = "Clear", bg = BACKGROUND_COLOR, command = lambda: reset_grid(drawing_area))
     clear_button.grid(row = 1, column = 4)
+    print_java_button = Button(root, text = "Print Java", bg = BACKGROUND_COLOR, command = print_java)
+    print_java_button.grid(row = 1, column = 5)
     # Drawing area
     drawing_area = Canvas(root, width = INPUT_PANEL_WIDTH, height = INPUT_PANEL_HEIGHT, bg = BACKGROUND_COLOR)
     drawing_area.grid(row = 0, column = 0, columnspan = MAX_COLUMN_SPAN)
@@ -86,10 +88,11 @@ def reset_grid(drawing_area):
 def locate_point(point):
     return (point[0] / WIDTH_SPACING, point[1] / HEIGHT_SPACING)
 
-def process_gesture():
+def process_gesture(drawing_area):
     global gesture, register_text, status_text, recognizer
     previous_point = locate_point(gesture[0])
-    gesture_deltas = [(0, 0)] * config.MAX_GESTURE_LENGTH
+    # gesture_deltas = [(0, 0)] * config.MAX_GESTURE_LENGTH
+    gesture_deltas = []
     index = 0
     for point in gesture:
         if (index >= config.MAX_GESTURE_LENGTH):
@@ -98,17 +101,25 @@ def process_gesture():
         downsampled_point = locate_point(point)
         # Add this square if it hasn't shown up before.
         if (downsampled_point != previous_point):
-            gesture_deltas[index] = (downsampled_point[0] - previous_point[0], downsampled_point[1] - previous_point[1])
+            gesture_deltas.append((downsampled_point[0] - previous_point[0], downsampled_point[1] - previous_point[1]))
             index += 1
             previous_point = downsampled_point
     # Display status
     status_text.set("Registering %r under %r" % (gesture_deltas[0:index], register_text.get()))
     recognizer.register_gesture(gesture_deltas, register_text.get())
+    recognizer.draw_interpolated(drawing_area, starting_point = locate_point(gesture[0]),
+        gesture_deltas = gesture_deltas, WIDTH_SPACING = WIDTH_SPACING, HEIGHT_SPACING = HEIGHT_SPACING)
 
 def save_gestures():
     global savefile_text, recognizer, status_text
     status_text.set("Saving gestures to %r" % savefile_text.get())
     recognizer.save_gestures(savefile_text.get())
+
+
+def print_java():
+    global recognizer
+    recognizer.dump_java_gesture_list()
+
 
 if __name__ == "__main__":
     main()
